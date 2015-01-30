@@ -29,12 +29,29 @@ class Admin::ContentController < Admin::BaseController
 
   def edit
     @article = Article.find(params[:id])
+    @admin = current_user.admin?
     unless @article.access_by? current_user
       redirect_to :action => 'index'
       flash[:error] = _("Error, you are not allowed to perform this action")
       return
     end
     new_or_edit
+  end
+
+  def merge_with
+    unless current_user.admin?
+      flash[:error] = _("You don't have authorization to merge articles")
+      redirect_to :action => :index
+    end
+
+    article = Article.find_by_id(params[:id])
+    if article.merge_with(params[:merge_with])
+      flash[:notice] = _("Articles successfully merged.")
+      redirect_to :action => :index
+    else
+      flash[:notice] = _("Articles couldn't be merged.")
+      redirect_to :action => :edit, :id => params[:id]
+    end
   end
 
   def destroy
